@@ -1,0 +1,120 @@
+import empleados.*
+import reciboHaberes.*
+import empresa.*
+
+describe "Test de Empresa y empleados" {
+
+  const permanente1 = new EmpleadoPermanente(cantidadHijos = 2 , antiguedad = 10 , nombre = "Jose" , direccion = "Mite 7283" , esSoltero = true , sueldoBasico = 160000.5 , fechaNacimiento = new Date(day = 12, month = 5, year = 1990)) //cantidadHijos, antiguedad, nombre, direccion, esSoltero fechaNacimiento, sueldoBasico
+ 
+  const empresa = new Empresa(nombre = "Mi Empresa", cuit = "30-12345678-9")
+
+  const permanente = new EmpleadoPermanente(
+    cantidadHijos = 2,
+    antiguedad = 10,
+    nombre = "Ana",
+    direccion = "Calle 123",
+    esSoltero = false,
+    sueldoBasico = 50000,
+    fechaNacimiento = new Date(day = 15, month = 5, year = 1980)
+  )
+  
+  const temporal = new EmpleadoTemporal(
+    nombre = "Luis",
+    direccion = "Avenida 456",
+    esSoltero = true,
+    fechaNacimiento = new Date(day = 20, month = 8, year = 1970),
+    sueldoBasico = 40000,
+    fechaFinDesignacion = new Date(day = 31, month = 11, year = 2025),
+    cantidadHorasExtras = 5
+  )
+  
+  const contratado = new EmpleadoContratado(
+    nombre = "María",
+    direccion = "Boulevard 789",
+    esSoltero = true,
+    fechaNacimiento = new Date(day = 10, month = 2, year = 1990),
+    sueldoBasico = 45000,
+    numContrato = 123,
+    medioDePago = "Transferencia"
+  )
+
+
+  test "Luis tiene 54 años"{
+    assert.equals(54, temporal.calcularEdad())
+  }
+
+  test "María tiene 35 años"{
+    assert.equals(35, contratado.calcularEdad())
+  }
+
+  test "empleado permanente no es soltero" {
+    assert.that(!permanente.esSoltero())
+  }
+  
+  test "empleado temporal es soltero" {
+    assert.that(temporal.esSoltero())
+  }
+  
+  test "description" {
+    assert.that(permanente1.esSoltero())
+  }
+
+  test "sueldo bruto permanente incluye salario familiar" {
+    assert.equals(50000 + (2*150) + (10 * 50) + 100 , permanente.calcularSueldoBruto())
+  }
+
+  test "sueldo bruto temporal incluye horas extras" {
+    assert.equals(40000 + (5*40), temporal.calcularSueldoBruto())
+  }
+
+  test "empleado contratado tiene gastos administrativos fijos" {
+    assert.equals(50, contratado.calcularRetenciones())
+  }
+
+  test "agregar empleados a empresa" {
+
+    empresa.agregarEmpleado(permanente)
+    empresa.agregarEmpleado(temporal)
+    empresa.agregarEmpleado(contratado)
+    
+    assert.equals(3, empresa.empleados().size())
+  }
+
+  test "medio de pago del contratado es Transferencia" {
+    assert.equals("Transferencia", contratado.medioDePago())
+  }
+
+
+  test "cálculo correcto de total sueldos brutos" {
+    empresa.agregarEmpleado(permanente)
+    empresa.agregarEmpleado(temporal)
+    empresa.agregarEmpleado(contratado)
+    // Permanente: 50000 + (2*150) + (10*50) + 150 = 50000 + 300 + 500 + 100 = 50900
+    // Temporal: 40000 + (5*40) = 40000 + 200 = 40200
+    // Contratado: 45000
+    const totalEsperado = 50900 + 40200 + 45000
+    assert.equals(totalEsperado, empresa.calcularTotalSueldosBrutos())
+  }
+
+  test "liquidación de sueldos genera recibos correctos" {
+    const recibo = new ReciboHaberes()
+    empresa.agregarEmpleado(permanente)
+    empresa.agregarEmpleado(temporal)
+    empresa.agregarEmpleado(contratado)
+
+
+    empresa.liquidarSueldos()
+    
+    const totalBrutoEsperado = permanente.calcularSueldoBruto() + temporal.calcularSueldoBruto() + contratado.calcularSueldoBruto()
+    const totalNetoEsperado = permanente.calcularSueldoNeto() + temporal.calcularSueldoNeto() + contratado.calcularSueldoNeto()
+    const retencionesEsperada = permanente.calcularRetenciones() + temporal.calcularRetenciones() + contratado.calcularRetenciones()
+    
+    assert.equals(totalBrutoEsperado, empresa.calcularTotalSueldosBrutos())
+    assert.equals(totalNetoEsperado, empresa.calcularTotalSueldosNetos())
+    assert.equals(retencionesEsperada, empresa.calcularTotalRetenciones())
+
+
+  }
+
+
+}
